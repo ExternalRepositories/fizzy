@@ -261,6 +261,7 @@ ExternalFunction find_imported_function(const std::string& module, const std::st
                                 " output type doesn't match imported function in module"};
     }
 
+    // Note: it->function is copied here.
     return {it->function, module_func_type};
 }
 
@@ -470,6 +471,14 @@ std::optional<FuncIdx> find_exported_function(const Module& module, std::string_
     return find_export(module, ExternalKind::Function, name);
 }
 
+ExecutionResult ExecuteFunction::operator()(Instance& instance, const Value* args, int depth)
+{
+    if (m_instance)
+        return execute(*m_instance, m_func_idx, args, depth);
+    else
+        return m_host_function(m_host_context, instance, args, depth);
+}
+
 std::optional<ExternalFunction> find_exported_function(Instance& instance, std::string_view name)
 {
     const auto opt_index = find_export(*instance.module, ExternalKind::Function, name);
@@ -477,11 +486,8 @@ std::optional<ExternalFunction> find_exported_function(Instance& instance, std::
         return std::nullopt;
 
     const auto idx = *opt_index;
-    auto func = [idx, &instance](fizzy::Instance&, const Value* args, int depth) {
-        return execute(instance, idx, args, depth);
-    };
-
-    return ExternalFunction{std::move(func), instance.module->get_function_type(idx)};
+    return ExternalFunction{
+        ExecuteFunction(instance, idx), instance.module->get_function_type(idx)};
 }
 
 std::optional<ExternalGlobal> find_exported_global(Instance& instance, std::string_view name)
