@@ -471,7 +471,8 @@ std::optional<FuncIdx> find_exported_function(const Module& module, std::string_
     return find_export(module, ExternalKind::Function, name);
 }
 
-ExecutionResult ExecuteFunction::operator()(Instance& instance, const Value* args, int depth)
+ExecutionResult ExecuteFunction::operator()(
+    Instance& instance, const Value* args, int depth) noexcept
 {
     if (m_instance)
         return execute(*m_instance, m_func_idx, args, depth);
