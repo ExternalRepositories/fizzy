@@ -151,7 +151,7 @@ commands:
             lcov --capture --directory . --output-file coverage.lcov --exclude='/usr/include/*' --exclude="$HOME/.hunter/*" --exclude="$PWD/_deps/*"
             lcov --zerocounters --directory .
             rm -rf coverage
-            genhtml coverage.lcov --output-directory coverage --title Fizzy
+            genhtml coverage.lcov --output-directory coverage --title $CIRCLE_PROJECT_REPONAME
 
   collect_coverage_clang:
     description: "Collect coverage data (Clang)"
@@ -481,6 +481,18 @@ jobs:
           min_time: "0.01"
       - spectest
 
+  x86-linux:
+    docker:
+      - image: ethereum/cpp-build-env:15-gcc-10-multilib
+    steps:
+      - install_testfloat
+      - checkout
+      - build:
+          build_type: Debug
+          cmake_options: -DCMAKE_TOOLCHAIN_FILE=~/project/cmake/toolchains/32bit.cmake
+      - test
+      - spectest
+
   arm64-linux:
     executor: linux-gcc-latest
     steps:
@@ -718,36 +730,37 @@ workflows:
   testing:
     unless: <<pipeline.parameters.benchmark>>
     jobs:
-      - lint
-      - release-linux:
-          requires:
-            - release-native-linux
-      - release-native-linux
-      - release-macos:
-          requires:
-            - release-native-macos
-      - release-native-macos:
-          requires:
-            - sanitizers-macos
-      - coverage-gcc
-      - coverage-clang
-      - sanitizers-clang
-      - sanitizers-gcc
-      - sanitizers-macos
-      - fuzzing
-      - spectest:
-          requires:
-            - coverage-clang
-      - arm64-linux:
-          requires:
-            - coverage-gcc
-      - bindings-rust
-      - bindings-rust-asan:
-          requires:
-            - bindings-rust
-      - bindings-rust-coverage:
-          requires:
-            - bindings-rust
+      - x86-linux
+#      - lint
+#      - release-linux:
+#          requires:
+#            - release-native-linux
+#      - release-native-linux
+#      - release-macos:
+#          requires:
+#            - release-native-macos
+#      - release-native-macos:
+#          requires:
+#            - sanitizers-macos
+#      - coverage-gcc
+#      - coverage-clang
+#      - sanitizers-clang
+#      - sanitizers-gcc
+#      - sanitizers-macos
+#      - fuzzing
+#      - spectest:
+#          requires:
+#            - coverage-clang
+#      - arm64-linux:
+#          requires:
+#            - coverage-gcc
+#      - bindings-rust
+#      - bindings-rust-asan:
+#          requires:
+#            - bindings-rust
+#      - bindings-rust-coverage:
+#          requires:
+#            - bindings-rust
 
   benchmarking:
     when: <<pipeline.parameters.benchmark>>
