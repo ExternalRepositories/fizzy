@@ -148,7 +148,7 @@ inline uint32_t grow_memory(
     if (new_pages > memory_pages_limit)
         return static_cast<uint32_t>(-1);
 
-    // FIXME: Guarantee this by instantiate.
+    // Guaranteed by instantiate.
     assert(memory_pages_limit <= MemoryPagesValidationLimit);
     try
     {

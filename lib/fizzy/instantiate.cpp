@@ -174,6 +174,13 @@ std::tuple<bytes_ptr, Limits> allocate_memory(const std::vector<Memory>& module_
     static const auto bytes_delete = [](bytes* b) noexcept { delete b; };
     static const auto null_delete = [](bytes*) noexcept {};
 
+    if (memory_pages_limit > MemoryPagesValidationLimit)
+    {
+        throw instantiate_error{"hard memory limit cannot exceed " +
+                                std::to_string(uint64_t{MemoryPagesValidationLimit} * PageSize) +
+                                " bytes"};
+    }
+
     assert(module_memories.size() + imported_memories.size() <= 1);
 
     if (module_memories.size() == 1)
