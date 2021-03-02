@@ -138,16 +138,23 @@ inline bool store_into_memory(
 inline uint32_t grow_memory(
     bytes& memory, uint32_t delta_pages, uint32_t memory_pages_limit) noexcept
 {
+    // Guaranteed by instantiate allocation + resize in grow_memory.
+    assert(memory.size() % PageSize == 0);
     const auto cur_pages = memory.size() / PageSize;
-    assert(cur_pages <= size_t(std::numeric_limits<int32_t>::max()));
-    const auto new_pages = cur_pages + delta_pages;
-    assert(new_pages >= cur_pages);
+    // Guaranteed by instantiate allocation + resize in grow_memory.
+    assert(cur_pages <= MemoryPagesValidationLimit);
+
+    const auto new_pages = uint64_t{cur_pages} + delta_pages;
     if (new_pages > memory_pages_limit)
         return static_cast<uint32_t>(-1);
 
+    // FIXME: Guarantee this by instantiate.
+    assert(memory_pages_limit <= MemoryPagesValidationLimit);
     try
     {
-        memory.resize(new_pages * PageSize);
+        // new_pages <= memory_pages_limit <= MemoryPagesValidationLimit guarantees multiplication
+        // will not overflow size_t.
+        memory.resize(static_cast<size_t>(new_pages) * PageSize);
         return static_cast<uint32_t>(cur_pages);
     }
     catch (...)
